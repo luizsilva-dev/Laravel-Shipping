@@ -1,0 +1,58 @@
+{
+    "name": "luizsilva-dev/laravel-shipping",
+    "description": "A unified shipping abstraction for Laravel supporting ShipEngine, Shippo, and EasyPost.",
+    "type": "library",
+    "keywords": [
+        "laravel",
+        "shipping",
+        "shipengine",
+        "shippo",
+        "easypost",
+        "carrier",
+        "labels",
+        "tracking"
+    ],
+    "license": "MIT",
+    "authors": [
+        {
+            "name": "Luiz Silva",
+            "role": "Developer"
+        }
+    ],
+    "require": {
+        "php": "^8.2",
+        "illuminate/support": "^11.0|^12.0",
+        "illuminate/http": "^11.0|^12.0",
+        "illuminate/contracts": "^11.0|^12.0"
+    },
+    "require-dev": {
+        "orchestra/testbench": "^9.0|^10.0",
+        "phpunit/phpunit": "^11.0|^12.0",
+        "mockery/mockery": "^1.6"
+    },
+    "autoload": {
+        "psr-4": {
+            "LuizSilvaDev\\LaravelShipping\\": "src/"
+        }
+    },
+    "autoload-dev": {
+        "psr-4": {
+            "LuizSilvaDev\\LaravelShipping\\Tests\\": "tests/"
+        }
+    },
+    "extra": {
+        "laravel": {
+            "providers": [
+                "LuizSilvaDev\\LaravelShipping\\LaravelShippingServiceProvider"
+            ],
+            "aliases": {
+                "Shipping": "LuizSilvaDev\\LaravelShipping\\Facades\\Shipping"
+            }
+        }
+    },
+    "config": {
+        "sort-packages": true
+    },
+    "minimum-stability": "stable",
+    "prefer-stable": true
+}
