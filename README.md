@@ -452,8 +452,9 @@ vendor/bin/phpunit
 - Auth: `API-Key` header
 - Sandbox URL: `https://api-stage.shipstation.com`
 - Tracking uses `label_id` (not raw tracking number) via `GET /v2/labels/{label_id}/track`
-- Address validation: `POST /v2/addresses/validate`
+- **Address validation is only available on paid plans.** Free plan accounts will receive a `ProviderException` with a clear message instead of a silent failure.
 - `createLabel()` without `serviceCode` in `ShipmentData` **automatically selects the cheapest available rate**
+- Rates with `error_messages` are automatically filtered out; if no valid rates remain, a `RateException` is thrown with the carrier error message.
 - Docs: https://docs.shipstation.com
 
 ### Shippo

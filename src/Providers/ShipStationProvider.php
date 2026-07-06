@@ -55,6 +55,9 @@ class ShipStationProvider extends AbstractProvider
     /**
      * Validate an address via POST /v2/addresses/validate.
      *
+     * NOTE: Address validation is only available on paid ShipStation plans.
+     * Free plan accounts will receive a 403 error from the API.
+     *
      * @see https://docs.shipstation.com/openapi/addresses/validate_address
      */
     public function validateAddress(AddressData $address): AddressData
@@ -74,9 +77,16 @@ class ShipStationProvider extends AbstractProvider
                 : ($address->isResidential === false ? 'no' : 'unknown'),
         ]);
 
+        if ($response->status() === 403) {
+            throw ProviderException::unsupportedFeature(
+                provider: $this->providerName(),
+                feature: 'address validation (not available on free plan — upgrade your ShipStation account)',
+            );
+        }
+
         $this->throwIfFailed($response, 'validate address');
 
-        $data = $response->json();
+        $data = $response->json() ?? [];
 
         $status = $data['status'] ?? 'error';
 
@@ -122,16 +132,37 @@ class ShipStationProvider extends AbstractProvider
 
         $this->throwIfFailed($response, 'get rates');
 
-        $data = $response->json();
+        $data = $response->json() ?? [];
 
-        $rates = $data['rate_response']['rates'] ?? $data['rates'] ?? [];
+        $rateResponse   = $data['rate_response'] ?? [];
+        $rates          = $rateResponse['rates'] ?? [];
+        $invalidRates   = $rateResponse['invalid_rates'] ?? [];
+        $status         = $rateResponse['status'] ?? 'unknown';
 
-        if (empty($rates)) {
+        $validRates = array_filter(
+            $rates,
+            fn (array $r) => empty($r['error_messages'])
+        );
+
+        if (empty($validRates)) {
+            $errors = array_merge(
+                array_column($invalidRates, 'error_messages'),
+                array_filter(array_column($rates, 'error_messages'))
+            );
+
+            $errorMessages = array_unique(array_merge(...array_map(
+                fn ($e) => is_array($e) ? $e : [$e],
+                $errors
+            )));
+
             throw new RateException(
-                message: 'No rates returned from ShipStation.',
+                message: 'No valid rates returned from ShipStation'
+                    . ($errorMessages ? ': ' . implode('; ', $errorMessages) : ''),
                 context: $data,
             );
         }
+
+        $rates = array_values($validRates);
 
         return array_map(fn (array $rate) => RateData::fromArray($rate), $rates);
     }
