@@ -14,6 +14,7 @@ final class RateData
         public readonly string $serviceType,
         public readonly float $amount,
         public readonly string $currency,
+        public readonly float $otherAmount = 0.0,
         public readonly ?int $deliveryDays = null,
         public readonly ?string $estimatedDeliveryDate = null,
         public readonly array $warnings = [],
@@ -21,8 +22,15 @@ final class RateData
         public readonly array $raw = [],
     ) {}
 
+    public function totalAmount(): float
+    {
+        return round($this->amount + $this->otherAmount, 2);
+    }
+
     public static function fromArray(array $data): self
     {
+        $currency = $data['shipping_amount']['currency'] ?? $data['currency'] ?? 'USD';
+
         return new self(
             rateId: $data['rate_id'] ?? '',
             carrierId: $data['carrier_id'] ?? '',
@@ -30,7 +38,8 @@ final class RateData
             serviceCode: $data['service_code'] ?? '',
             serviceType: $data['service_type'] ?? '',
             amount: (float) ($data['shipping_amount']['amount'] ?? $data['amount'] ?? 0),
-            currency: $data['shipping_amount']['currency'] ?? $data['currency'] ?? 'USD',
+            currency: strtoupper($currency),
+            otherAmount: (float) ($data['other_amount']['amount'] ?? 0),
             deliveryDays: isset($data['delivery_days']) ? (int) $data['delivery_days'] : null,
             estimatedDeliveryDate: $data['estimated_delivery_date'] ?? null,
             warnings: $data['warning_messages'] ?? $data['warnings'] ?? [],
@@ -48,9 +57,12 @@ final class RateData
             'service_code'            => $this->serviceCode,
             'service_type'            => $this->serviceType,
             'amount'                  => $this->amount,
+            'other_amount'            => $this->otherAmount,
+            'total_amount'            => $this->totalAmount(),
             'currency'                => $this->currency,
             'delivery_days'           => $this->deliveryDays,
             'estimated_delivery_date' => $this->estimatedDeliveryDate,
+            'warnings'                => $this->warnings,
         ];
     }
 }

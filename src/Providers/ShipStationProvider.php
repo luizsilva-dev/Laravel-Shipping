@@ -123,10 +123,12 @@ class ShipStationProvider extends AbstractProvider
      */
     public function rates(ShipmentData $shipment): array
     {
-        $payload = [
-            'rate_options' => $this->buildRateOptions($shipment),
+        $rateOptions = $this->buildRateOptions($shipment);
+
+        $payload = array_filter([
+            'rate_options' => $rateOptions ?: null,
             'shipment'     => $this->buildShipmentPayload($shipment),
-        ];
+        ], fn ($v) => $v !== null);
 
         $response = $this->http()->post('/v2/rates', $payload);
 
@@ -150,10 +152,11 @@ class ShipStationProvider extends AbstractProvider
                 array_filter(array_column($rates, 'error_messages'))
             );
 
-            $errorMessages = array_unique(array_merge(...array_map(
+            $flattened     = empty($errors) ? [] : array_merge(...array_map(
                 fn ($e) => is_array($e) ? $e : [$e],
                 $errors
-            )));
+            ));
+            $errorMessages = array_unique($flattened);
 
             throw new RateException(
                 message: 'No valid rates returned from ShipStation'
